@@ -1,24 +1,45 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import './App.css';
+import useAPI from './useAPI';
+
+
+const Data = ({ status, data, error }) => {
+    if (status === 'idle') {
+        return <div>Loading...</div>;
+    }
+
+    if (status === 'success') {
+        return <div>
+            <code style={{ whiteSpace: 'pre' }}>
+                {JSON.stringify(data, null, '\t')}
+            </code>
+        </div>
+    }
+
+    if (status === 'error') {
+        return (
+            <div>
+                <p>Oops! Something went wrong.</p>
+                <p>{error.message}</p>
+                <button type="button">
+                    Retry
+            </button>
+            </div>
+        );
+    }
+}
 
 const App = () => {
-    const [data, setData] = useState(null);
-    const [defaultUrl, setDefaultUrl] = useState('https://hacker-news.firebaseio.com/v0');
-    const [query, setQuery] = useState('/item/2921983.json?print=pretty');
+    const defaultUrl = 'https://hacker-news.firebaseio.com/v0/';
 
-    const fetchData = async (defaultUrl, query) => {
-        const response = await fetch(defaultUrl + query);
-        const fetchedData = await response.json();
-        setData(fetchedData);
-    }
+    const [query, setQuery] = useState('/item/2921983.json?print=pretty');
+    const [fetchUrl, setFetchUrl] = useState(defaultUrl + query);
+
+    const [data, status, error] = useAPI(fetchUrl);
 
     const handleSubmit = (e) => {
-        fetchData(defaultUrl, query)
+        setFetchUrl(defaultUrl + query)
         e.preventDefault();
-    }
-
-    const changeDefaultUrl = (e) => {
-        setDefaultUrl(e.target.value);
     }
 
     const changeQuery = (e) => {
@@ -30,10 +51,6 @@ const App = () => {
             <div className="container">
                 <form onSubmit={handleSubmit}>
                     <p>
-                        <label htmlFor="default-url">Default url:</label>
-                        <input type="url" name="default-url" id="default-url" value={defaultUrl} onChange={changeDefaultUrl} />
-                    </p>
-                    <p>
                         <label htmlFor="query">Query:</label>
                         <input type="text" name="query" id="query" value={query} onChange={changeQuery} />
                     </p>
@@ -43,15 +60,15 @@ const App = () => {
                 </form>
             </div>
             <div>
-                <h2>Your link:</h2>
+                <h2>Default url:</h2>
+                {defaultUrl}
+                <h2>Query:</h2>
+                {query}
+                <h2>Full url:</h2>
                 {defaultUrl + query}
             </div>
-            <div>
-                <h2>Your data:</h2>
-                <code style={{ whiteSpace: 'pre' }}>
-                    {JSON.stringify(data, null, '\t')}
-                </code>
-            </div>
+            <h1>Data:</h1>
+            <Data status={status} data={data} error={error} />
         </div >
     );
 }
